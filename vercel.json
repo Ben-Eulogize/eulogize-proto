@@ -4,6 +4,5 @@
   "buildCommand": "yarn install && yarn build && cd packages/eulogise-client && yarn build:staging",
   "outputDirectory": "packages/eulogise-client/public",
   "installCommand": "yarn install",
-  "ignoreCommand": "exit 0",
-  "nodeVersion": "20.x"
+  "ignoreCommand": "exit 0"
 }
