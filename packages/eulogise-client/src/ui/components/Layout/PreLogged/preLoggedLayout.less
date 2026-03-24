@@ -1,0 +1,58 @@
+@font-size-base: 16px;
+@invisible-dropdown-padding: 20px;
+
+@font-face {
+  font-family: 'Greycliff';
+  src: url('../../../fonts/GreycliffCF-Regular.woff2');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Greycliff';
+  src: url('../../../fonts/GreycliffCF-Bold.woff2');
+  font-weight: 800;
+}
+
+*,
+*:before,
+*:after {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: 'Greycliff', serif;
+  padding: 0;
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+button::after {
+  animation: 0s !important;
+}
+
+.ant-notification {
+  z-index: 10000;
+}
+
+.ant-card {
+  font-size: 1rem;
+}
+
+// Adding non-Ant icons in the button should apply this style as the Ant icons
+.ant-btn > svg + span,
+.ant-btn > span + svg {
+  margin-left: 8px;
+}
+
+.ant-dropdown {
+  &:before {
+    top: -@invisible-dropdown-padding;
+    bottom: -@invisible-dropdown-padding;
+    right: -@invisible-dropdown-padding;
+    left: -@invisible-dropdown-padding;
+  }
+}

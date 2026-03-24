@@ -1,0 +1,99 @@
+#fc_frame,
+#fc_frame.fc-widget-normal {
+  z-index: 100 !important;
+}
+
+.ant-input {
+  z-index: 100;
+}
+
+@font-face {
+  font-family: 'Greycliff';
+  src: url('../../../fonts/GreycliffCF-Regular.woff2');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Greycliff';
+  src: url('../../../fonts/GreycliffCF-Bold.woff2');
+  font-weight: 800;
+}
+
+*,
+*:before,
+*:after {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: 'Greycliff', serif;
+  padding: 0;
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  height: 100%;
+}
+
+div.text-item-calculation-container {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: inherit;
+    font-weight: inherit;
+    margin: 0;
+    font-size: inherit;
+  }
+}
+
+button::after {
+  animation: 0s !important;
+}
+
+.ant-layout {
+  background-color: #ffffff;
+}
+
+.ant-notification {
+  z-index: 10000;
+  margin-top: 40px;
+}
+
+.ant-popover-inner-content {
+  padding: 0;
+}
+
+.guide-popover-right .ant-popover-arrow-content::before {
+  background: #ede0f0;
+}
+
+.guide-popover-bottom .ant-popover-arrow-content::before {
+  background: #fff;
+}
+
+.sign-up-country-reminder-popover .ant-popover-content {
+  max-width: 400px;
+}
+
+.sign-up-country-reminder-popover .ant-popover-inner {
+  border-radius: 25px;
+}
+
+.sign-up-country-reminder-popover .ant-popover-arrow-content::before {
+  background: #ede0f0;
+}
+
+.ant-select-item.primary-countries-divider.ant-select-item-option {
+  min-height: 2px;
+}
+
+.checkbox-link,
+.checkbox-link:hover {
+  color: currentColor;
+  text-decoration: underline;
+}

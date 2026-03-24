@@ -1,0 +1,53 @@
+console.log(
+  'process.env.DYNAMODB_CREATE_TABLE_ON_START',
+  process.env.DYNAMODB_CREATE_TABLE_ON_START,
+)
+export const CONFIG = {
+  DB_PREFIX: process.env.DB_PREFIX,
+  EULOGISE_APP_DOMAIN: process.env.EULOGISE_APP_DOMAIN,
+  EULOGISE_API_DOMAIN: process.env.EULOGISE_API_DOMAIN,
+  GENERATOR_API_URL: process.env.GENERATOR_API_URL,
+  REDIS_HOST: process.env.REDIS_HOST,
+  WEBSOCKET_API_MANAGEMENT_API_ENDPOINT:
+    process.env.WEBSOCKET_API_MANAGEMENT_API_ENDPOINT,
+  AWS_REGION:
+    process.env.XAWS_REGION !== 'null' ? process.env.XAWS_REGION : undefined,
+  AWS_DYNAMO_DB_REGION:
+    process.env.XAWS_DYNAMO_DB_REGION !== 'null'
+      ? process.env.XAWS_DYNAMO_DB_REGION
+      : undefined,
+  AWS_DYNAMO_DB_ENDPOINT:
+    process.env.XAWS_DYNAMO_DB_ENDPOINT !== 'null'
+      ? process.env.XAWS_DYNAMO_DB_ENDPOINT
+      : undefined,
+  AWS_ACCESS_KEY:
+    process.env.XAWS_ACCESS_KEY !== 'null'
+      ? process.env.XAWS_ACCESS_KEY
+      : undefined,
+  AWS_SECRET_KEY:
+    process.env.XAWS_SECRET_KEY !== 'null'
+      ? process.env.XAWS_SECRET_KEY
+      : undefined,
+  AWS_S3_BUCKET: process.env.XAWS_S3_BUCKET,
+  AWS_FILESTACK_S3_BUCKET: process.env.XAWS_FILESTACK_BUCKET,
+  AWS_CLOUD_FRONT_MEDIA_DISTRIBUTION_ID:
+    process.env.XAWS_CLOUDFRONT_MEDIA_DISTRIBUTION_ID,
+  TMP_DIR: '/tmp',
+  FILESTACK_API: 'AGVj64KLUQueytYsDsqVgz',
+  FILESTACK_CDN: 'https://cdn.filestackcontent.com',
+  REMOVE_BG_API_KEY: 'p3MjnjTCtBcj8ptSosrChbS1',
+  WEB_PURIFY_API_KEY: '279adac6bee05686fd903fe2c53648bc',
+  WEB_PURIFY_CHECK_API_PREFIX_URL: 'http://api1.webpurify.com/services/rest',
+  DYNAMODB: {
+    THROUGHPUT: 'ON_DEMAND',
+    CREATE_TABLE_ON_START:
+      process.env.DYNAMODB_CREATE_TABLE_ON_START === 'true',
+  },
+  SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
+  EXPORT_REPORT_PROCESS_FN: process.env.EXPORT_REPORT_PROCESS_FN,
+  POPULATE_CASE_REPORT_TABLE_PROCESS_FN:
+    process.env.POPULATE_CASE_REPORT_TABLE_PROCESS_FN,
+  REINDEX_REDIS_DB_PROCESS_FN: process.env.REINDEX_REDIS_DB_PROCESS_FN,
+  VIDEO_FIX_GLITCHES_AND_GENERATE_PROCESS_FN:
+    process.env.VIDEO_FIX_GLITCHES_AND_GENERATE_PROCESS_FN,
+}

@@ -1,0 +1,48 @@
+import { Lambdur } from 'lambdur'
+import { Webtoken } from '../../../../webtoken'
+import {
+  mwWebtokenAccount,
+  accessControlAllowOrigin,
+} from '../../../middleware'
+import { tvWelcomeScreenResourceController } from '../../../controller'
+
+export const resourceTvWelcomeScreenSend: Lambdur.Handler<
+  handler.Request,
+  handler.Response
+> = async (request, context) => {
+  const query = request.body
+
+  try {
+    await tvWelcomeScreenResourceController.sendPrintEmail(
+      query.tvWelcomeScreen,
+    )
+  } catch (error) {
+    if (error.lambdurError) {
+      throw error
+    }
+    throw new Lambdur.Error({
+      id: '',
+      statusCode: 500,
+      message: `Unable to send tvWelcomeScreen.`,
+    })
+  }
+
+  return {
+    statusCode: 200,
+    body: {},
+  }
+}
+
+export const handler = Lambdur.chain(
+  Lambdur.chain(mwWebtokenAccount, resourceTvWelcomeScreenSend),
+  accessControlAllowOrigin,
+)
+
+export namespace handler {
+  export interface Request extends Webtoken.Request<Webtoken.Payload.Account> {
+    body: {
+      tvWelcomeScreen: string
+    }
+  }
+  export interface Response extends Lambdur.Handler.Response {}
+}

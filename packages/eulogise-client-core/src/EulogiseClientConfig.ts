@@ -1,0 +1,44 @@
+const DEFAULT_FILESTACK_CDN = 'https://cdn.filestackcontent.com'
+
+export const EulogiseClientConfig = {
+  APP_NAME: process.env.GATSBY_APP_NAME,
+  APP_ENDPOINT: process.env.GATSBY_APP_ENDPOINT,
+  EULOGISE_API_URL: process.env.GATSBY_EULOGISE_API_URL,
+  WEBSOCKET_API_URL: process.env.GATSBY_WEBSOCKET_API_URL,
+  USE_MOCK: process.env.GATSBY_USE_MOCK === 'true',
+  BRAINFISH_WIDGET_KEY: process.env.GATSBY_BRAINFISH_WIDGET_KEY,
+  PENDO_API_KEY: process.env.GATSBY_PENDO_API_KEY,
+  USE_DEVELOPMENT: process.env.GATSBY_USE_DEVELOPMENT === 'true',
+  AWS_S3_BUCKET:
+    process.env.GATSBY_AWS_S3_BUCKET ||
+    process.env.AWS_S3_BUCKET ||
+    process.env.XAWS_REGION,
+  AWS_REGION:
+    process.env.GATSBY_AWS_REGION ||
+    process.env.AWS_REGION ||
+    process.env.XAWS_REGION,
+  AWS_S3_URL:
+    process.env.GATSBY_AWS_S3_URL ||
+    process.env.AWS_S3_URL ||
+    process.env.XAWS_S3_URL,
+  AWS_S3_URL_WITHOUT_CDN: process.env.GATSBY_AWS_S3_URL_WITHOUT_CDN,
+  FILESTACK_CDN:
+    process.env.GATSBY_FILESTACK_CDN ||
+    process.env.FILESTACK_CDN ||
+    DEFAULT_FILESTACK_CDN,
+  FILESTACK_API_KEY:
+    process.env.GATSBY_FILESTACK_API_KEY || process.env.FILESTACK_API_KEY,
+  STRIPE_API_KEY: process.env.GATSBY_STRIPE_API_KEY,
+
+  CARD_PRODUCT_SPACE_ITEM_MIN_HEIGHT: 65,
+  CARD_PRODUCT_ICON_ITEM_DEFAULT_SIZE: 65,
+  THUMBNAIL_IMAGE_SIZE: 200,
+
+  SLIDESHOW_AUTO_SAVE_INTERVAL: 3 * 60 * 1000, // 3 minutes
+
+  GOOGLE_MAP_PLACES_API_KEY: process.env.GATSBY_GOOGLE_MAPS_PLACES_API_KEY,
+
+  CHECKOUT_USE_DISCOUNT_PRICE: false,
+
+  TOOLTIP_VISIBLE_TIMEOUT: 500,
+}

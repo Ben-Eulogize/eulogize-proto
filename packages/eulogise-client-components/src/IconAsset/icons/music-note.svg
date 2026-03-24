@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" viewBox="23 23 54 54" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+ <path transform="scale(1.0417)" d="m42.634 66.266v-33.221" fill="none"  stroke-linecap="round" stroke-miterlimit="10" stroke-width="2"/>
+ <path transform="matrix(.97885 -.35635 .35635 .97885 -21.939 16.579)" d="m42.969 67.676c-9e-6 2.6418-3.7479 4.7812-8.3731 4.7814-4.6217 0.001506-8.3709-2.1416-8.3709-4.7834 1e-5 -2.6418 3.7492-4.7847 8.3696-4.7827 4.6252-2.23e-4 8.3744 2.1428 8.3744 4.7846" fill="none"  stroke-linecap="round" stroke-miterlimit="10" stroke-width="2"/>
+ <path transform="scale(1.0417)" d="m69.439 56.212v-33.218" fill="none"  stroke-linecap="round" stroke-miterlimit="10" stroke-width="2"/>
+ <path transform="matrix(.97885 -.35625 .35625 .97885 -16.672 25.498)" d="m69.777 57.622c2.39e-4 2.6419-3.7488 4.7852-8.3742 4.7859-4.6241-0.002866-8.3701-2.1444-8.3703-4.7863-2.39e-4 -2.6419 3.7476-4.7817 8.3694-4.7836 4.6254-6.57e-4 8.3749 2.1421 8.3751 4.784" fill="none"  stroke-linecap="round" stroke-miterlimit="10" stroke-width="2"/>
+ <path transform="scale(1.0417)" d="m42.634 33.045 26.805-10.05" fill="none"  stroke-linecap="round" stroke-miterlimit="10" stroke-width="2"/>
+</svg>

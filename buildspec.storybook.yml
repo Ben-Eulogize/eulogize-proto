@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo Installing Yarn...
+      - npm install -g yarn
+
+  pre_build:
+    commands:
+      # install and build libraries
+      - echo Installing and building libraries
+      - yarn installAndBuild
+      # build
+      - echo Build Storybook
+      - yarn build:storybook
+  post_build:
+    commands:
+      - aws s3 rm s3://${S3_BUCKET} --recursive
+      - aws s3 cp packages/eulogise-client-components/storybook-static s3://${S3_BUCKET} --recursive
+      - aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID} --paths '/*'

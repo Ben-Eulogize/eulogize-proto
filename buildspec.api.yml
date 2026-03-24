@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo Installing Yarn...
+      - npm install -g yarn
+      - npm install -g env-cmd
+      # install and build libraries
+      - echo Installing and building libraries
+      - yarn installAndBuild
+
+  pre_build:
+    commands:
+      - if [ "${ENVIRONMENT}" = "production-us" ]; then export AWS_REGION=us-east-2; else export AWS_REGION=ap-southeast-2; fi
+      - node packages/eulogise-api/scripts/load-ssm-env.js --env ${ENVIRONMENT} --path "/eulogise/api/${ENVIRONMENT}"
+      - node -e "const fs=require('fs');const p='packages/eulogise-api/environments/.env.'+process.env.ENVIRONMENT;if(!fs.existsSync(p)){console.error('Missing '+p);process.exit(1);}const lines=fs.readFileSync(p,'utf8').split(/\\r?\\n/);const env={};for(const line of lines){if(!line||line.startsWith('#'))continue;const idx=line.indexOf('=');if(idx===-1)continue;const k=line.slice(0,idx);const v=line.slice(idx+1);env[k]=v;}const safeKeys=['ENV','DB_PREFIX','EULOGISE_APP_DOMAIN','EULOGISE_API_DOMAIN','GENERATOR_API_URL','REDIS_HOST','XAWS_REGION','XAWS_S3_BUCKET','XAWS_FILESTACK_BUCKET','XAWS_CLOUDFRONT_MEDIA_DISTRIBUTION_ID','SERVERLESS_WARMUP_INSTANCES','WEBSOCKET_API_MANAGEMENT_API_ENDPOINT'];const secretKeys=['PASSARE_API_KEY','SENDGRID_ACCESS_KEY','STRIPE_ACCESS_KEY','WEBTOKEN_SECRET','XAWS_ACCESS_KEY','XAWS_SECRET_KEY','SERVERLESS_ACCESS_KEY'];console.log('Loaded SSM env file:',p);console.log('Loaded key count:',Object.keys(env).length);for(const k of safeKeys){if(k in env)console.log(k+':',env[k]);}for(const k of secretKeys){console.log(k+':',env[k]?'set':'missing');}"
+
+  post_build:
+    commands:
+      - echo Deploying ....
+      - yarn deploy:api:${ENVIRONMENT} --verbose
+      # cleanup generated SSM env file to avoid persisting secrets in workspace artifacts
+      - rm -f packages/eulogise-api/environments/.env.${ENVIRONMENT}

@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "outDir": "./dist",
+    "watch": false,
+    "declarationMap": true,
+    "target": "es2015",
+    "types": ["jest", "@types/jest"],
+    "lib": ["es6", "dom", "es2017"],
+  },
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+    "dist/**/*",
+    "node_modules",
+  ],
+}

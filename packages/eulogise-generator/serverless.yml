@@ -1,0 +1,236 @@
+service: eulogise-generator
+frameworkVersion: '2 || 3'
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-plugin-warmup
+  - serverless-plugin-lambda-insights
+
+package:
+  individually: false
+  excludeDevDependencies: true
+
+provider:
+  name: aws
+  region: ${env:XAWS_REGION}
+  runtime: nodejs20.x
+  environment:
+    ENV: ${opt:stage, 'local'}
+    API_URL: ${env:API_URL}
+    API_ACCESS_KEY: ${env:API_ACCESS_KEY}
+    API_SECRET_KEY: ${env:API_SECRET_KEY}
+    FILESTACK_CDN: ${env:FILESTACK_CDN}
+    XAWS_REGION: ${env:XAWS_REGION}
+    XAWS_S3_BUCKET: ${env:XAWS_S3_BUCKET}
+    XAWS_S3_URL: ${env:XAWS_S3_URL}
+    XAWS_S3_URL_WITHOUT_CDN: ${env:XAWS_S3_URL_WITHOUT_CDN}
+    XAWS_CLOUDFRONT_MEDIA_DISTRIBUTION_ID: ${env:XAWS_CLOUDFRONT_MEDIA_DISTRIBUTION_ID}
+    VIDEO_OUTPUT_SIZE: ${env:VIDEO_OUTPUT_SIZE}
+    ENABLE_GENERATOR_CLEAN_UP_SCREENSHOTS: ${env:ENABLE_GENERATOR_CLEAN_UP_SCREENSHOTS}
+    AWS_SDK_LOAD_CONFIG: ${env:AWS_SDK_LOAD_CONFIG}
+    IS_LAMBDA_GENERATE_SLIDESHOW: ${env:IS_LAMBDA_GENERATE_SLIDESHOW}
+    CPDF_BIN: ${env:CPDF_BIN}
+    FFMPEG_PATH: ${env:FFMPEG_PATH}
+    GHOSTSCRIPT_PATH: ${env:GHOSTSCRIPT_PATH}
+    FONTS_PATH: ${env:FONTS_PATH}
+    ENABLE_HTML_GENERATION: ${env:ENABLE_HTML_GENERATION}
+    SLACK_WEBHOOK_URL: ${env:SLACK_WEBHOOK_URL}
+    GENERATE_API_HANDLER_FN: eulogise-generator-api-handler-${opt:stage, 'local'}
+    GENERATOR_MASTER_SLIDESHOW_PROCESS_FN: eulogise-generator-slideshow-master-v2-${opt:stage, 'local'}
+    GENERATOR_CAPTURE_SCREENSHOT_PROCESS_FN: eulogise-generator-capture-screenshot-process-${opt:stage, 'local'}
+    GENERATOR_BACKGROUND_IMAGE_PROCESS_FN: eulogise-generator-background-generation-process-${opt:stage, 'local'}
+    GENERATOR_EDITED_BACKGROUND_IMAGE_PROCESS_FN: eulogise-generator-edited-background-${opt:stage, 'local'}
+    GENERATOR_PDF_GENERATION_PROCESS_FN: eulogise-generator-pdf-generation-process-${opt:stage, 'local'}
+    GENERATOR_CONVERT_TO_PRINTABLE_PDF_PROCESS_FN: eulogise-generator-convert-to-printable-pdf-${opt:stage, 'local'}
+    GENERATOR_CARD_PRODUCT_SINGLE_SCREENSHOT_PROCESS_FN: eulogise-generator-cardproduct-screenshot-${opt:stage, 'local'}
+    GENERATOR_PRODUCT_THUMBNAIL_GENERATION_PROCESS_FN: eulogise-generator-product-thumbnail-generation-${opt:stage, 'local'}
+    GENERATOR_CAPTURE_SCREENSHOT_TRIGGER_FN: eulogise-generator-capture-screenshot-trigger-${opt:stage, 'local'}
+    GENERATOR_MASTER_VIDEO_GENERATION_PROCESS_FN: eulogise-master-video-generation-${opt:stage, 'local'}
+    GENERATOR_SLAVE_VIDEO_BLOCK_GENERATION_PROCESS_FN: eulogise-slave-block-video-generation-${opt:stage, 'local'}
+    GENERATOR_SLAVE_FINALISE_VIDEO_PROCESS_FN: eulogise-slave-finalise-video-${opt:stage, 'local'}
+    DESIGN_SYSTEM_URL: ${env:DESIGN_SYSTEM_URL}
+    TMP_DIR: ${env:TMP_DIR}
+    GENERATOR_AWS_RESERVED_CONCURRENCY: ${env:AWS_RESERVED_CONCURRENCY}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - s3:*
+            - ses:SendRawEmail
+            - ses:SendEmail
+            - cloudfront:*
+          Resource: '*'
+
+custom:
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 1
+  serverless-offline:
+    httpPort: 4000
+  webpack:
+    webpackConfig: 'webpack.config.js'
+    packager: 'yarn'
+    # keepOutputDirectory: true
+    includeModules:
+      nodeModulesRelativeDir: '../../'
+      forceExclude:
+        - '@sparticuz/chromium'
+        - sharp
+  warmup:
+    default:
+      enabled: false
+      # role: arn:aws:iam::${self:custom.accountId}:role/${self:custom.namespace}-${self:provider.stage}-lambdaExecutionRole
+      folderName: '.warmup'
+      cleanFolder: true
+      memorySize: 256
+      events:
+        - schedule: rate(10 minutes)
+      verbose: true
+      prewarm: true
+      concurrency: 1 # Warm up 1 concurrent instances
+
+functions:
+  generator:
+    name: ${self:provider.environment.GENERATE_API_HANDLER_FN}
+    handler: src/routes/handler.apiHandle
+    description: aws:states:opt-out
+    timeout: 40 # 40 seconds
+    memorySize: 1024
+    lambdaInsights: true
+    events:
+      - http:
+          method: ANY
+          path: /{any+}
+          cors: true
+  generatorMasterSlideshowProcess:
+    description: aws:states:opt-out
+    memorySize: 512
+    name: ${self:provider.environment.GENERATOR_MASTER_SLIDESHOW_PROCESS_FN}
+    timeout: 900 # 15 minutes
+    handler: src/routes/generatorMasterSlideshowJobHandler.generatorMasterSlideshowJobHandle
+    lambdaInsights: true
+    layers:
+      - ${env:FFMPEG_LAYER}
+  generatorCaptureScreenshotTrigger:
+    description: Generator Capture Screenshot Trigger
+    memorySize: 512
+    name: ${self:provider.environment.GENERATOR_CAPTURE_SCREENSHOT_TRIGGER_FN}
+    # Can't be too long as master slideshow process might take 5 minutes to convert screenshots into video
+    timeout: 900 # 15 minutes
+    handler: src/routes/generatorTriggerScreenshotHandler.generatorTriggerScreenshotHandle
+    lambdaInsights: true
+  generatorMasterVideoGenerationProcess:
+    description: Master Video generation process
+    memorySize: 512
+    name: ${self:provider.environment.GENERATOR_MASTER_VIDEO_GENERATION_PROCESS_FN}
+    timeout: 900 # 15 minutes
+    handler: src/routes/generatorMasterVideoGenerationJobHandler.generatorMasterVideoGenerationJobHandle
+    lambdaInsights: true
+    layers:
+      - ${env:FFMPEG_LAYER}
+
+  generatorSlaveVideoBlockGenerationProcess:
+    description: Slave Video generation process - generate video by block index
+    memorySize: 10240
+    ephemeralStorageSize: 10240
+    name: ${self:provider.environment.GENERATOR_SLAVE_VIDEO_BLOCK_GENERATION_PROCESS_FN}
+    timeout: 600 # 10 minutes
+    handler: src/routes/generatorSlaveVideoBlockGenerationJobHandler.generatorSlaveVideoBlockGenerationJobHandle
+    lambdaInsights: true
+    layers:
+      - ${env:FFMPEG_LAYER}
+
+  generatorSlaveFinaliseVideoProcess:
+    description: Slave process to merge blocks into one and attach audios
+    runtime: nodejs18.x
+    memorySize: 10240
+    ephemeralStorageSize: 10240
+    name: ${self:provider.environment.GENERATOR_SLAVE_FINALISE_VIDEO_PROCESS_FN}
+    timeout: 900 # 15 minutes
+    handler: src/routes/generatorFinaliseVideoJobHandler.generatorFinaliseVideoJobHandle
+    lambdaInsights: true
+    layers:
+      - ${env:FFMPEG_LAYER}
+
+  generatorCaptureScreenshotProcess:
+    description: aws:states:opt-out
+    memorySize: 4096
+    ephemeralStorageSize: 2048
+    name: ${self:provider.environment.GENERATOR_CAPTURE_SCREENSHOT_PROCESS_FN}
+    timeout: 8 # 8 seconds
+    lambdaInsights: true
+    handler: src/routes/generatorScreenCaptureJobHandler.generatorScreenCaptureJobHandle
+    reservedConcurrency: ${self:provider.environment.GENERATOR_AWS_RESERVED_CONCURRENCY}
+    layers:
+      - ${env:EULOGIZE_CHROMIUM_LAYER}
+      - ${env:EULOGIZE_FONTS_LAYER}
+  generatePdfProcess:
+    description: Generator PDF generation
+    memorySize: 10240
+    ephemeralStorageSize: 4096
+    name: ${self:provider.environment.GENERATOR_PDF_GENERATION_PROCESS_FN}
+    timeout: 900 # 15 mins
+    lambdaInsights: true
+    handler: src/routes/generatorPdfJobHandler.generatorPdfJobHandle
+    layers:
+      - ${env:EULOGIZE_CHROMIUM_LAYER}
+      - ${env:EULOGIZE_FONTS_LAYER}
+  generateConvertToPrintablePdfProcess:
+    description: Generator Convert to printable Ghostscript PDF
+    memorySize: 2048
+    ephemeralStorageSize: 2048
+    name: ${self:provider.environment.GENERATOR_CONVERT_TO_PRINTABLE_PDF_PROCESS_FN}
+    timeout: 300 # 5 mins
+    lambdaInsights: true
+    handler: src/routes/generatorConvertToPrintablePdfJobHandler.generatorConvertToPrintablePdfJobHandle
+    layers:
+      - ${env:EULOGIZE_GHOSTSCRIPT_LAYER}
+  generateCardProductSingleScreenshotProcess:
+    description: Generate Individual Card Product Single Screenshot by page index
+    memorySize: 4096
+    ephemeralStorageSize: 2048
+    name: ${self:provider.environment.GENERATOR_CARD_PRODUCT_SINGLE_SCREENSHOT_PROCESS_FN}
+    timeout: 8 # 8 seconds
+    lambdaInsights: true
+    handler: src/routes/generatorCardProductSingleScreenshotJobHandler.generatorCardProductSingleScreenshotJobHandle
+    layers:
+      - ${env:EULOGIZE_CHROMIUM_LAYER}
+      - ${env:EULOGIZE_FONTS_LAYER}
+  generateEditedBackgroundImageProcess:
+    description: Generate Edited Core Product Background Image
+    memorySize: 4096
+    ephemeralStorageSize: 1024
+    name: ${self:provider.environment.GENERATOR_EDITED_BACKGROUND_IMAGE_PROCESS_FN}
+    timeout: 20 # 20 seconds
+    handler: src/routes/generatorEditedBackgroundImageJobHandler.generatorEditedBackgroundImageJobHandle
+    layers:
+      - ${env:EULOGIZE_CHROMIUM_LAYER}
+      - ${env:SHARP_LAYER}
+  generateBackgroundImageProcess:
+    description: Generate Background Image
+    memorySize: 4096
+    ephemeralStorageSize: 2048
+    name: ${self:provider.environment.GENERATOR_BACKGROUND_IMAGE_PROCESS_FN}
+    timeout: 20 # 20 seconds
+    # This function can not be automatically turned on Lambda Insight due to the layer size issue
+    # manually turned it on in AWS console.
+    # lambdaInsights: true
+    handler: src/routes/generatorBackgroundImageJobHandler.generatorBackgroundImageJobHandle
+    layers:
+      - ${env:EULOGIZE_CHROMIUM_LAYER}
+      - ${env:SHARP_LAYER}
+  generateProductThumbnailProcess:
+    description: Generator Product Thumbnail generation
+    memorySize: 10240
+    name: ${self:provider.environment.GENERATOR_PRODUCT_THUMBNAIL_GENERATION_PROCESS_FN}
+    timeout: 20 # 40 seconds
+    lambdaInsights: true
+    handler: src/routes/generatorProductThumbnailJobHandler.generatorProductThumbnailJobHandle
+    layers:
+      - ${env:EULOGIZE_CHROMIUM_LAYER}
+      - ${env:EULOGIZE_FONTS_LAYER}

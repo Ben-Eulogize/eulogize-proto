@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "downlevelIteration": true,
+    "lib": ["es6", "es7", "dom"],
+    "types": ["node", "@types/mocha"]
+  },
+  "include": [
+    "./src/**/*",
+    "./test/**/*"
+  ]
+}

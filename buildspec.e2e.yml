@@ -1,0 +1,49 @@
+# test build will trigger end to end test for develop branch
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: latest
+    commands:
+      - echo Installing Yarn...
+      - npm install -g yarn
+      - npm install -g env-cmd
+      # install and build libraries
+      - echo Installing and building libraries
+      - yarn installAndBuild
+
+  pre_build:
+    commands:
+      - echo Run start DynamoDB
+      - yarn start:db:local &
+
+      - echo Starting Backend
+      - yarn start:api:local &
+
+      - echo Building Frontend
+      - yarn build:ui:e2e
+
+      - echo Starting Frontend Server
+      - npx serve packages/eulogise-client/public -l 8080 &
+
+      - echo Running Seed
+      - yarn start:db:seed:local
+
+      - echo Check Backend Service
+      - curl -v http://localhost:3000/development/v2/healthcheck
+  build:
+    commands:
+      - echo Install cypress dependencies
+      - sudo yum update -y
+      - sudo yum install -y mesa-libgbm mesa-libgbm-devel
+      - echo Cypress install
+      - yarn global add cypress@13.10.0
+      - echo Cypress run
+      - cd packages/eulogise-client && yarn test:e2e:headless
+
+cache:
+  paths:
+    - 'node_modules/**/*'
+    - 'packages/**/node_modules/**/*'
+    - '/root/.cache/yarn/**/*'

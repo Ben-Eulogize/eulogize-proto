@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "jsx": "react",
+    "outDir": "./dist",
+    "watch": false,
+    "declarationMap": true,
+    "target": "es2015",
+    "types": ["jest", "@types/jest"],
+    "lib": ["es6", "dom", "es2017"]
+  },
+  "include": ["./src/**/*", "./custom.d.ts"],
+  "exclude": ["dist/**/*", "node_modules", "**/*.stories.tsx"]
+}

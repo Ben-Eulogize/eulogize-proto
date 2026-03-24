@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["es6", "dom", "es2019"],
+    "types": ["cypress", "@testing-library/cypress"],
+    "esModuleInterop": true,
+    "baseUrl": "./src"
+  },
+  "include": ["**/*.ts"]
+}

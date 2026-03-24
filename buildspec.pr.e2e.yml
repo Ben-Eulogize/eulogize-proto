@@ -1,0 +1,10 @@
+# this build will trigger end to end test for branches except develop and master
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: latest
+    commands:
+      - echo Installing Yarn...
+      - npm install -g yarn

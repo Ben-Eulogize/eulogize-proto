@@ -1,0 +1,256 @@
+service: eulogise-api
+frameworkVersion: '4'
+
+plugins:
+  - serverless-offline
+  - serverless-prune-plugin
+  - serverless-plugin-warmup
+  - serverless-plugin-lambda-insights
+
+package:
+  individually: true
+  excludeDevDependencies: true
+
+build:
+  esbuild:
+    bundle: true
+    external:
+      - '@aws-sdk/*'
+    exclude:
+      - '!heic-decode'
+      - 'aws-sdk'
+    buildConcurrency: 3
+    minify: true
+    sourcemap:
+      type: linked
+      setNodeOptions: true
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${env:ENV}
+  region: ${env:XAWS_REGION}
+  vpc:
+    securityGroupIds: ${file(./serverlessFunctions.js):securityGroupIds, []}
+    subnetIds: ${file(./serverlessFunctions.js):subnets, []}
+  apiGateway:
+    minimumCompressionSize: 1024
+  websocketsApiName: ${self:service}-websockets-${self:provider.stage}
+  websocketsApiRouteSelectionExpression: $request.body.action
+  environment:
+    # SLS
+    SERVERLESS_ACCESS_KEY: ${env:SERVERLESS_ACCESS_KEY}
+
+    # Internal
+    STAGE: ${env:ENV}
+    DB_PREFIX: ${env:DB_PREFIX}
+    WEBTOKEN_SECRET: ${env:WEBTOKEN_SECRET}
+    GENERATOR_API_URL: ${env:GENERATOR_API_URL}
+    EULOGISE_APP_DOMAIN: ${env:EULOGISE_APP_DOMAIN}
+    EULOGISE_API_DOMAIN: ${env:EULOGISE_API_DOMAIN}
+    DB_CLEANUP_STRATEGY: ${env:DB_CLEANUP_STRATEGY, 'NONE'}
+    REDIS_HOST: ${env:REDIS_HOST, ''}
+    SERVERLESS_WARMUP_INSTANCES: ${env:SERVERLESS_WARMUP_INSTANCES, 1}
+
+    # Stripe
+    STRIPE_CURRENCY: ${env:STRIPE_CURRENCY}
+    STRIPE_ACCESS_KEY: ${env:STRIPE_ACCESS_KEY}
+
+    # Sendgrid
+    SENDGRID_ACCESS_KEY: ${env:SENDGRID_ACCESS_KEY}
+    SENDGRID_EMAIL_SUPPORT_NAME: ${env:SENDGRID_EMAIL_SUPPORT_NAME}
+    SENDGRID_EMAIL_SUPPORT_ADDRESS: ${env:SENDGRID_EMAIL_SUPPORT_ADDRESS}
+    SENDGRID_EMAIL_PRINT_ADDRESS: ${env:SENDGRID_EMAIL_PRINT_ADDRESS}
+    # Sendgrid Templates
+    SENDGRID_TEMPLATE_ACCOUNT_SIGNUP: ${env:SENDGRID_TEMPLATE_ACCOUNT_SIGNUP}
+    SENDGRID_TEMPLATE_ACCOUNT_SIGNUP_CUSTOMER_AS_CLIENT: ${env:SENDGRID_TEMPLATE_ACCOUNT_SIGNUP_CUSTOMER_AS_CLIENT}
+    SENDGRID_TEMPLATE_ACCOUNT_PASSWORD_RESET: ${env:SENDGRID_TEMPLATE_ACCOUNT_PASSWORD_RESET}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_BOOKLET: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_BOOKLET}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_BOOKMARK: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_BOOKMARK}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_SIDED_CARD: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_SIDED_CARD}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_SLIDESHOW: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_SLIDESHOW}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_THANKYOUCARD: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_VISITOR_THANKYOUCARD}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_CONTRIBUTOR: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_CONTRIBUTOR}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_CUSTOMER: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_CUSTOMER}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_CLIENT: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_CLIENT}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_CO_EDITOR_AS_CUSTOMER: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_CO_EDITOR_AS_CUSTOMER}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_EDITOR_AS_CUSTOMER: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_EDITOR_AS_CUSTOMER}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_CO_EDITOR_AS_CLIENT: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_CO_EDITOR_AS_CLIENT}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_EDITOR_AS_CLIENT: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_EDITOR_AS_CLIENT}
+    SENDGRID_TEMPLATE_RESOURCE_BOOKLET_PRINT: ${env:SENDGRID_TEMPLATE_RESOURCE_BOOKLET_PRINT}
+    SENDGRID_TEMPLATE_RESOURCE_SIDED_CARD_PRINT: ${env:SENDGRID_TEMPLATE_RESOURCE_SIDED_CARD_PRINT}
+    SENDGRID_TEMPLATE_RESOURCE_BOOKLET_GENERATED: ${env:SENDGRID_TEMPLATE_RESOURCE_BOOKLET_GENERATED}
+    SENDGRID_TEMPLATE_RESOURCE_SLIDESHOW_GENERATED: ${env:SENDGRID_TEMPLATE_RESOURCE_SLIDESHOW_GENERATED}
+    SENDGRID_TEMPLATE_RESOURCE_SIDEDCARD_GENERATED: ${env:SENDGRID_TEMPLATE_RESOURCE_SIDEDCARD_GENERATED}
+    SENDGRID_TEMPLATE_RESOURCE_BOOKMARK_GENERATED: ${env:SENDGRID_TEMPLATE_RESOURCE_BOOKMARK_GENERATED}
+    SENDGRID_TEMPLATE_RESOURCE_THANKYOUCARD_GENERATED: ${env:SENDGRID_TEMPLATE_RESOURCE_THANKYOUCARD_GENERATED}
+    SENDGRID_TEMPLATE_RESOURCE_CLIENT_ADMIN_CASE_CREATED: ${env:SENDGRID_TEMPLATE_RESOURCE_CLIENT_ADMIN_CASE_CREATED}
+    SENDGRID_TEMPLATE_RESOURCE_CLIENT_USER_CASE_CREATED: ${env:SENDGRID_TEMPLATE_RESOURCE_CLIENT_USER_CASE_CREATED}
+    SENDGRID_TEMPLATE_ACCOUNT_INVITE_NEW_CLIENT_FUNERAL_DIRECTOR_VIA_API: ${env:SENDGRID_TEMPLATE_ACCOUNT_INVITE_NEW_CLIENT_FUNERAL_DIRECTOR_VIA_API}
+    SENDGRID_TEMPLATE_SHARE_INVITATION: ${env:SENDGRID_TEMPLATE_SHARE_INVITATION}
+
+    # AWS
+    XAWS_REGION: ${self:provider.region}
+    XAWS_DYNAMO_DB_REGION: ${env:XAWS_DYNAMO_DB_REGION, null}
+    XAWS_DYNAMO_DB_ENDPOINT: ${env:XAWS_DYNAMO_DB_ENDPOINT, null}
+    XAWS_ACCESS_KEY: ${env:XAWS_ACCESS_KEY, null}
+    XAWS_SECRET_KEY: ${env:XAWS_SECRET_KEY, null}
+    XAWS_S3_BUCKET: ${env:XAWS_S3_BUCKET}
+    XAWS_FILESTACK_BUCKET: ${env:XAWS_FILESTACK_BUCKET}
+    XAWS_CLOUDFRONT_MEDIA_DISTRIBUTION_ID: ${env:XAWS_CLOUDFRONT_MEDIA_DISTRIBUTION_ID}
+    DYNAMODB_CREATE_TABLE_ON_START: ${env:DYNAMODB_CREATE_TABLE_ON_START}
+    ENABLE_GENERATOR: ${env:ENABLE_GENERATOR, 'true'}
+    EXPORT_REPORT_PROCESS_FN: eulogise-export-report-${opt:stage, 'local'}
+    POPULATE_CASE_REPORT_TABLE_PROCESS_FN: eulogise-populate-case-report-${opt:stage, 'local'}
+    REINDEX_REDIS_DB_PROCESS_FN: eulogise-reindex-redis-db-${opt:stage, 'local'}
+    VIDEO_FIX_GLITCHES_AND_GENERATE_PROCESS_FN: eulogize-fix-glitch-generate-${opt:stage, 'local'}
+
+    # Slack
+    SLACK_WEBHOOK_URL: ${env:SLACK_WEBHOOK_URL, ''}
+
+    # WebSocket
+    WEBSOCKET_API_MANAGEMENT_API_ENDPOINT: ${env:WEBSOCKET_API_MANAGEMENT_API_ENDPOINT, ''}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - s3:*
+            - cloudfront:CreateInvalidation
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+            - execute-api:Invoke
+          Resource:
+            - 'arn:aws:execute-api:*:*:**/@connections/*'
+
+functions:
+  exportReport:
+    name: ${self:provider.environment.EXPORT_REPORT_PROCESS_FN}
+    description: Export Report to CSV
+    memorySize: 8192
+    timeout: 900 # 15 minutes
+    handler: src/ts/functions/handler/processes/exportReport.exportReportHandler
+    events:
+      - schedule: rate(24 hours)
+  populateCaseReportTable:
+    name: ${self:provider.environment.POPULATE_CASE_REPORT_TABLE_PROCESS_FN}
+    description: Populate and Summarise Case Report Table
+    memorySize: 2048
+    timeout: 900 # 15 minutes
+    handler: src/ts/functions/handler/processes/caseReport.populateCaseReportTableHandler
+    events:
+      - schedule: rate(20 minutes)
+  reindexRedisDB:
+    name: ${self:provider.environment.REINDEX_REDIS_DB_PROCESS_FN}
+    description: Reindex Redis DB
+    memorySize: 4096
+    timeout: 900 # 15 minutes
+    handler: src/ts/functions/handler/processes/reindexRedisDB.reindexRedisDBHandler
+    events:
+      - schedule: rate(1 hour)
+  videoFixGlitchesGen:
+    name: ${self:provider.environment.VIDEO_FIX_GLITCHES_AND_GENERATE_PROCESS_FN}
+    description: Fix Video Glitches before generating
+    memorySize: 512
+    timeout: 900 # 15 minutes
+    handler: src/ts/functions/handler/processes/videoFixGlitchesGenerate.videoFixGlitchesGenerateHandler
+
+  # external integration API endpoint
+  v2:
+    handler: src/ts/functions/handler/v2/Handle.api
+    memorySize: 2048
+    timeout: 20
+    warmup:
+      default:
+        enabled: true
+        concurrency: ${self:provider.environment.SERVERLESS_WARMUP_INSTANCES}
+    events:
+      - websocket:
+          route: message
+      - websocket:
+          route: $connect
+      - websocket:
+          route: $disconnect
+      - websocket:
+          route: $default
+      - http:
+          method: ANY
+          path: /v2/{any+}
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - API-KEY
+            allowCredentials: false
+  v2Ext:
+    handler: src/ts/functions/handler/v2/Handle.api
+    memorySize: 2048
+    timeout: 30 # 30 seconds - API Gateway cap at 30 seconds
+    warmup:
+      default:
+        enabled: true
+        concurrency: ${self:provider.environment.SERVERLESS_WARMUP_INSTANCES}
+    events:
+      - http:
+          method: ANY
+          path: /v2-ext/{any+}
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - API-KEY
+            allowCredentials: false
+  dailyTask:
+    handler: src/ts/functions/handler/v2/DailyHandle.dailyTask
+    timeout: 900
+    events:
+      - schedule:
+          # every day at 12am
+          rate: cron(0 0 * * ? *)
+          # every 30 mins
+          # rate: rate(30 minutes)
+          enabled: true
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+  prune:
+    automatic: true
+    includeLayers: true
+    number: 1
+  warmup:
+    default:
+      enabled: false
+      # role: arn:aws:iam::${self:custom.accountId}:role/${self:custom.namespace}-${self:provider.stage}-lambdaExecutionRole
+      folderName: '.warmup'
+      cleanFolder: true
+      memorySize: 256
+      events:
+        - schedule: rate(1 minute)
+      verbose: true
+      prewarm: true
+      concurrency: 1 # Warm up 1 concurrent instance by default

@@ -1,0 +1,5 @@
+export * from './BookletBackgroundThumbnail'
+export * from './BookmarkBackgroundThumbnail'
+export * from './SlideshowBackgroundThumbnail'
+export * from './ThankYouCardBackgroundThumbnail'
+export * from './TvWelcomeScreenBackgroundThumbnail'

@@ -1,0 +1,1005 @@
+openapi: 3.0.3
+info:
+  version: 1.37.0
+  title: Eulogize Local API
+servers:
+  - url: http://localhost:3000/development
+components:
+  securitySchemes:
+    Bearer:
+      type: apiKey
+      name: api-key
+      in: header
+  schemas:
+    CreateCaseAPIErrorsPayload:
+      type: object
+      required:
+        - id
+        - statusCode
+        - message
+      properties:
+        id:
+          type: string
+          example: 1a2b3c06
+        statusCode:
+          type: string
+          example: '400'
+        message:
+          type: string
+          example: Family member email has been existed, case create failed.
+    CreateClientAPIErrorsPayload:
+      type: object
+      required:
+        - id
+        - statusCode
+        - message
+      properties:
+        id:
+          type: string
+          example: 1a2b3c23
+        statusCode:
+          type: string
+          example: '400'
+        message:
+          type: string
+          example: Invalid country field input, please check again.
+    AddFuneralDirectorAPIErrorsPayload:
+      type: object
+      required:
+        - id
+        - statusCode
+        - message
+      properties:
+        id:
+          type: string
+          example: 1a2b3c25
+        statusCode:
+          type: string
+          example: '400'
+        message:
+          type: string
+          example: >-
+            The email of the new funeral director has been taken, please try
+            another again.
+    InvalidParameterAPIErrorsPayload:
+      type: object
+      required:
+        - id
+        - statusCode
+        - message
+      properties:
+        id:
+          type: string
+          example: 1a2b3c09
+        statusCode:
+          type: string
+          example: '400'
+        message:
+          type: string
+          example: Invalid parameter provided, please check the request body.
+    ClientNotFoundAPIErrorsPayload:
+      type: object
+      required:
+        - id
+        - statusCode
+        - message
+      properties:
+        id:
+          type: string
+          example: 1a2b3c10
+        statusCode:
+          type: string
+          example: '404'
+        message:
+          type: string
+          example: Client not found with the provided client ID.
+    EmailExistsAPIErrorsPayload:
+      type: object
+      required:
+        - id
+        - statusCode
+        - message
+      properties:
+        id:
+          type: string
+          example: 1a2b3c11
+        statusCode:
+          type: string
+          example: '409'
+        message:
+          type: string
+          example: The provided email address already exists in the system.
+    CaseCreatedSuccessResponse:
+      type: object
+      required:
+        - caseId
+        - caseStatus
+        - accessUrl
+      properties:
+        caseId:
+          type: string
+          example: abc123def456
+        caseStatus:
+          type: string
+          enum:
+            - case_created
+            - case_failed_to_create
+          example: case_created
+        accessUrl:
+          type: string
+          nullable: true
+          example: https://staging.app.eulogizememorials.com/login/?token=<your_case_access_token>
+        message:
+          type: string
+          example: Case created successfully.
+        ref:
+          type: string
+          example: 33a2216f588
+    UpdateCaseSuccessResponse:
+      type: object
+      required:
+        - message
+        - case
+      properties:
+        message:
+          type: string
+          example: Case updated successfully.
+        case:
+          type: object
+          description: Full updated case payload returned from the database.
+    ClientCreatedSuccessResponse:
+      type: object
+      required:
+        - clientId
+        - clientName
+        - clientStatus
+        - createdFuneralDirectorUserEmails
+        - failedFuneralDirectorUserEmails
+      properties:
+        clientId:
+          type: string
+          example: 842fb15e-722d-4d05-8244-e71321bf88f0
+        clientName:
+          type: string
+          example: My Funeral Home
+        clientStatus:
+          type: string
+          enum:
+            - client_created
+            - client_created_failed
+          example: client_created
+        message:
+          type: string
+          example: Client created.
+        createdFuneralDirectorUserEmails:
+          $ref: '#/components/schemas/createdFuneralDirectorUserEmails'
+        failedFuneralDirectorUserEmails:
+          $ref: '#/components/schemas/failedFuneralDirectorUserEmails'
+        ref:
+          type: string
+          example: 33a2216f588
+    FuneralDirectorCreatedSuccessResponse:
+      type: object
+      required:
+        - addedNewFuneralDirectorStatus
+        - funeralDirectorAccessLink
+        - hasFuneralDirectorInviteSent
+      properties:
+        addedNewFuneralDirectorStatus:
+          type: string
+          enum:
+            - new_funeral_director_created
+            - new_funeral_director_create_failed
+          example: new_funeral_director_created
+        funeralDirectorAccessLink:
+          type: string
+          example: https://staging.app.eulogizememorials.com/invite=<your_funeral_account_access_token>
+        hasFuneralDirectorInviteSent:
+          type: boolean
+          example: true
+    EnabledProducts:
+      type: object
+      additionalProperties: false
+      properties:
+        BOOKLET:
+          type: boolean
+          example: true
+        BOOKMARK:
+          type: boolean
+          example: false
+        SIDED_CARD:
+          type: boolean
+          example: true
+        SLIDESHOW:
+          type: boolean
+          example: true
+        THANK_YOU_CARD:
+          type: boolean
+          example: true
+        TV_WELCOME_SCREEN:
+          type: boolean
+          example: false
+        PHOTOBOOK:
+          type: boolean
+          example: false
+      example:
+        BOOKLET: true
+        BOOKMARK: false
+        SIDED_CARD: true
+        SLIDESHOW: true
+        THANK_YOU_CARD: true
+        TV_WELCOME_SCREEN: false
+        PHOTOBOOK: false
+    FuneralDirectorDetail:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+    createdFuneralDirectorUserEmails:
+      type: array
+      items:
+        type: string
+        format: email
+    failedFuneralDirectorUserEmails:
+      type: array
+      items:
+        type: string
+        format: email
+paths:
+  /v2/external/createCase:
+    post:
+      summary: >-
+        Create a new client case attaches to an existing client (Deprecating
+        soon)
+      description: >-
+        This API allows B2B partner create the case information of the user via
+        API Key and Client ID (This API will be deprecating soon, please use
+        `/v2/external/case` API instead)
+      deprecated: true
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - clientId
+                - deceasedName
+                - familyFirstAndLastName
+              properties:
+                clientId:
+                  type: string
+                  description: >-
+                    The client ID that you wanted to create case under that
+                    client (required)
+                  example: your-client-uuid
+                email:
+                  type: string
+                  description: Family member email address...
+                  example: yourfamilyemail@123.com
+                deceasedName:
+                  type: string
+                  description: Deceased person's name (required)...
+                  example: Bob Lucas
+                familyFirstAndLastName:
+                  type: string
+                  description: Family member's name (required)...
+                  example: Bob Joe
+                dateOfBirth:
+                  type: string
+                  format: date
+                  example: '1968-11-08'
+                dateOfDeath:
+                  type: string
+                  format: date
+                  example: '2024-10-31'
+                title:
+                  type: string
+                  nullable: true
+                  example: Mr
+                suffix:
+                  type: string
+                  nullable: true
+                  example: Jr
+                nickName:
+                  type: string
+                  nullable: true
+                  example: Bobby
+                education:
+                  type: string
+                  nullable: true
+                  example: University of Example
+                occupation:
+                  type: string
+                  nullable: true
+                  example: Engineer
+                militaryServiceBranch:
+                  type: string
+                  nullable: true
+                  example: Army
+                militaryServiceRank:
+                  type: string
+                  nullable: true
+                  example: Sergeant
+                militaryServiceDateEntered:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '1990-01-15'
+                militaryServiceDateDischarged:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '1998-06-20'
+                militaryServiceNotes:
+                  type: string
+                  nullable: true
+                  example: Served with distinction.
+                spouseName:
+                  type: string
+                  nullable: true
+                  example: Jane Lucas
+                childrenNames:
+                  type: string
+                  nullable: true
+                  example: Alex Lucas, Emma Lucas
+                fathersName:
+                  type: string
+                  nullable: true
+                  example: John Lucas
+                mothersName:
+                  type: string
+                  nullable: true
+                  example: Mary Lucas
+                obituary:
+                  type: string
+                  nullable: true
+                  example: Bob Lucas was a beloved father and friend.
+                serviceAddress:
+                  type: string
+                  nullable: true
+                  example: Bennelong Point, Sydney NSW 2000
+                serviceLocation:
+                  type: string
+                  nullable: true
+                  example: Memorial Chapel
+                viewingLocation:
+                  type: string
+                  nullable: true
+                  example: Memorial Hall
+                viewingAddress:
+                  type: string
+                  nullable: true
+                  example: 12 Example Street, Sydney NSW 2000
+                viewingDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2026-03-22'
+                viewingTime:
+                  type: string
+                  nullable: true
+                  example: 5:34 am
+                wakeLocation:
+                  type: string
+                  nullable: true
+                  example: Family Residence
+                wakeAddrfess:
+                  type: string
+                  nullable: true
+                  example: 34 Wake Street, Sydney NSW 2000
+                wakeDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2026-03-22'
+                wakeTime:
+                  type: string
+                  nullable: true
+                  example: 5:37 am
+                serviceConductedBy:
+                  type: string
+                  nullable: true
+                  example: Pastor John Doe
+                serviceNotes:
+                  type: string
+                  nullable: true
+                  example: Family requests bright attire.
+                pallbearers:
+                  type: string
+                  nullable: true
+                  example: Michael Lee, Daniel Wong
+                placeOfDisposition:
+                  type: string
+                  nullable: true
+                  example: Northern Suburbs Memorial Gardens
+                serviceDate:
+                  type: string
+                  format: date
+                  example: '2025-12-31'
+                serviceStartTime:
+                  type: string
+                  example: 11:42 am
+                arrangerId:
+                  type: string
+                  example: e46d7ae6-1a26-468e-8a4f-c4f0764d9973
+                inviteFamilyAs:
+                  type: string
+                  enum:
+                    - editor
+                    - coeditor
+                    - contributor
+                  example: contributor
+                  description: Role to invite family member as
+                enabledProducts:
+                  allOf:
+                    - $ref: '#/components/schemas/EnabledProducts'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseCreatedSuccessResponse'
+        '400':
+          description: Bad request - Invalid parameters or data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterAPIErrorsPayload'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientNotFoundAPIErrorsPayload'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailExistsAPIErrorsPayload'
+        '500':
+          description: Internal errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCaseAPIErrorsPayload'
+  /v2/external/case:
+    post:
+      summary: Create a new client case attaches to an existing client
+      description: >-
+        This API allows B2B partner create the case information of the user via
+        API Key and Client ID
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - clientId
+                - deceasedName
+                - familyFirstAndLastName
+              properties:
+                clientId:
+                  type: string
+                  description: >-
+                    The client ID that you wanted to create case under that
+                    client (required)
+                  example: your-client-uuid
+                email:
+                  type: string
+                  description: Family member email address...
+                  example: yourfamilyemail@123.com
+                deceasedName:
+                  type: string
+                  description: Deceased person's name (required)...
+                  example: Bob Lucas
+                familyFirstAndLastName:
+                  type: string
+                  description: Family member's name (required)...
+                  example: Bob Joe
+                dateOfBirth:
+                  type: string
+                  format: date
+                  example: '1968-11-08'
+                dateOfDeath:
+                  type: string
+                  format: date
+                  example: '2024-10-31'
+                title:
+                  type: string
+                  nullable: true
+                  example: Mr
+                suffix:
+                  type: string
+                  nullable: true
+                  example: Jr
+                nickName:
+                  type: string
+                  nullable: true
+                  example: Bobby
+                education:
+                  type: string
+                  nullable: true
+                  example: University of Example
+                occupation:
+                  type: string
+                  nullable: true
+                  example: Engineer
+                militaryServiceBranch:
+                  type: string
+                  nullable: true
+                  example: Army
+                militaryServiceRank:
+                  type: string
+                  nullable: true
+                  example: Sergeant
+                militaryServiceDateEntered:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '1990-01-15'
+                militaryServiceDateDischarged:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '1998-06-20'
+                militaryServiceNotes:
+                  type: string
+                  nullable: true
+                  example: Served with distinction.
+                spouseName:
+                  type: string
+                  nullable: true
+                  example: Jane Lucas
+                childrenNames:
+                  type: string
+                  nullable: true
+                  example: Alex Lucas, Emma Lucas
+                fathersName:
+                  type: string
+                  nullable: true
+                  example: John Lucas
+                mothersName:
+                  type: string
+                  nullable: true
+                  example: Mary Lucas
+                obituary:
+                  type: string
+                  nullable: true
+                  example: Bob Lucas was a beloved father and friend.
+                serviceAddress:
+                  type: string
+                  nullable: true
+                  example: Bennelong Point, Sydney NSW 2000
+                serviceLocation:
+                  type: string
+                  nullable: true
+                  example: Memorial Chapel
+                viewingLocation:
+                  type: string
+                  nullable: true
+                  example: Memorial Hall
+                viewingAddress:
+                  type: string
+                  nullable: true
+                  example: 12 Example Street, Sydney NSW 2000
+                viewingDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2026-03-22'
+                viewingTime:
+                  type: string
+                  nullable: true
+                  example: 5:34 am
+                wakeLocation:
+                  type: string
+                  nullable: true
+                  example: Family Residence
+                wakeAddrfess:
+                  type: string
+                  nullable: true
+                  example: 34 Wake Street, Sydney NSW 2000
+                wakeDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2026-03-22'
+                wakeTime:
+                  type: string
+                  nullable: true
+                  example: 5:37 am
+                serviceConductedBy:
+                  type: string
+                  nullable: true
+                  example: Pastor John Doe
+                serviceNotes:
+                  type: string
+                  nullable: true
+                  example: Family requests bright attire.
+                pallbearers:
+                  type: string
+                  nullable: true
+                  example: Michael Lee, Daniel Wong
+                placeOfDisposition:
+                  type: string
+                  nullable: true
+                  example: Northern Suburbs Memorial Gardens
+                serviceDate:
+                  type: string
+                  format: date
+                  example: '2025-12-31'
+                serviceStartTime:
+                  type: string
+                  example: 11:42 am
+                arrangerId:
+                  type: string
+                  example: e46d7ae6-1a26-468e-8a4f-c4f0764d9973
+                inviteFamilyAs:
+                  type: string
+                  enum:
+                    - editor
+                    - coeditor
+                    - contributor
+                  example: contributor
+                  description: Role to invite family member as
+                enabledProducts:
+                  allOf:
+                    - $ref: '#/components/schemas/EnabledProducts'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseCreatedSuccessResponse'
+        '400':
+          description: Bad request - Invalid parameters or data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterAPIErrorsPayload'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientNotFoundAPIErrorsPayload'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailExistsAPIErrorsPayload'
+        '500':
+          description: Internal errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCaseAPIErrorsPayload'
+  /v2/external/cases/{caseId}:
+    put:
+      summary: Update an existing client case
+      description: >-
+        This API updates an existing case by caseId in the URL and applies only
+        the optional fields provided in the request body.
+      security:
+        - Bearer: []
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Case ID to update
+          example: 78a387a9-190f-421a-9210-2dc1661a60d1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  nullable: true
+                  example: Mr
+                fullName:
+                  type: string
+                  example: Bob Lucas
+                suffix:
+                  type: string
+                  nullable: true
+                  example: Jr
+                nickName:
+                  type: string
+                  nullable: true
+                  example: Bobby
+                dateOfBirth:
+                  type: string
+                  format: date
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '1968-11-08'
+                dateOfDeath:
+                  type: string
+                  format: date
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2024-10-31'
+                education:
+                  type: string
+                  nullable: true
+                  example: University of Example
+                occupation:
+                  type: string
+                  nullable: true
+                  example: Engineer
+                militaryServiceBranch:
+                  type: string
+                  nullable: true
+                  example: Army
+                militaryServiceRank:
+                  type: string
+                  nullable: true
+                  example: Sergeant
+                militaryServiceDateEntered:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '1990-01-15'
+                militaryServiceDateDischarged:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '1998-06-20'
+                militaryServiceNotes:
+                  type: string
+                  nullable: true
+                  example: Served with distinction.
+                spouseName:
+                  type: string
+                  nullable: true
+                  example: Jane Lucas
+                childrenNames:
+                  type: string
+                  nullable: true
+                  example: Alex Lucas, Emma Lucas
+                fathersName:
+                  type: string
+                  nullable: true
+                  example: John Lucas
+                mothersName:
+                  type: string
+                  nullable: true
+                  example: Mary Lucas
+                serviceLocation:
+                  type: string
+                  nullable: true
+                  example: Memorial Chapel
+                serviceAddress:
+                  type: string
+                  nullable: true
+                  example: Bennelong Point, Sydney NSW 2000
+                serviceDate:
+                  type: string
+                  format: date
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2025-12-31'
+                serviceTime:
+                  type: string
+                  nullable: true
+                  example: 11:42 am
+                viewingLocation:
+                  type: string
+                  nullable: true
+                  example: Memorial Hall
+                viewingAddress:
+                  type: string
+                  nullable: true
+                  example: 12 Example Street, Sydney NSW 2000
+                viewingDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2026-03-22'
+                viewingTime:
+                  type: string
+                  nullable: true
+                  example: 5:34 am
+                wakeLocation:
+                  type: string
+                  nullable: true
+                  example: Family Residence
+                wakeAddress:
+                  type: string
+                  nullable: true
+                  example: 34 Wake Street, Sydney NSW 2000
+                wakeDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Optional. Validated only when provided (YYYY-MM-DD).
+                  example: '2026-03-22'
+                wakeTime:
+                  type: string
+                  nullable: true
+                  example: 5:37 am
+                serviceConductedBy:
+                  type: string
+                  nullable: true
+                  example: Pastor John Doe
+                serviceNotes:
+                  type: string
+                  nullable: true
+                  example: Family requests bright attire.
+                pallbearers:
+                  type: string
+                  nullable: true
+                  example: Michael Lee, Daniel Wong
+                placeOfDisposition:
+                  type: string
+                  nullable: true
+                  example: Northern Suburbs Memorial Gardens
+                obituary:
+                  type: string
+                  nullable: true
+                  example: Bob Lucas was a beloved father and friend.
+      responses:
+        '200':
+          description: Case updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateCaseSuccessResponse'
+        '400':
+          description: Bad request - Invalid date input or empty update payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterAPIErrorsPayload'
+        '404':
+          description: Case not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCaseAPIErrorsPayload'
+        '500':
+          description: Internal errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCaseAPIErrorsPayload'
+  /v2/external/client:
+    post:
+      summary: Create a new client with API Key
+      description: This API allows B2B partner create the client with the configured emails and names of funeral directors
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - newClientName
+                - country
+                - funeralDirectors
+              properties:
+                newClientName:
+                  type: string
+                  example: My Funeral Home
+                country:
+                  type: string
+                  enum:
+                    - Australia
+                    - United States
+                  example: United States
+                funeralDirectors:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FuneralDirectorDetail'
+      responses:
+        '200':
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientCreatedSuccessResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterAPIErrorsPayload'
+        '409':
+          description: Email already exists for funeral directors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailExistsAPIErrorsPayload'
+        '500':
+          description: Internal errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateClientAPIErrorsPayload'
+  /v2/external/funeralDirector:
+    post:
+      summary: Add a new funeral director to an existing client by client ID
+      description: This API allows B2B partner add a new funeral director...
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - clientId
+                - newFuneralDirectorName
+                - newFuneralDirectorEmail
+              properties:
+                clientId:
+                  type: string
+                  example: 54995d85-9c52-4b92-97e4-9db10916996f
+                newFuneralDirectorName:
+                  type: string
+                  example: Oscar Piastri
+                newFuneralDirectorEmail:
+                  type: string
+                  example: oscar-piastri@f1.com
+      responses:
+        '200':
+          description: New funeral director created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FuneralDirectorCreatedSuccessResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterAPIErrorsPayload'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientNotFoundAPIErrorsPayload'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailExistsAPIErrorsPayload'
+        '500':
+          description: Internal errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddFuneralDirectorAPIErrorsPayload'

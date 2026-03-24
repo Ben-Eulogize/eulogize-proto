@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo Installing Yarn...
+      - npm install -g yarn
+      - npm install -g env-cmd
+      # install and build libraries
+      - echo Installing and building libraries
+      - yarn installAndBuild
+
+  pre_build:
+    commands:
+      - if [ "${ENVIRONMENT}" = "production-us" ]; then export AWS_REGION=us-east-2; else export AWS_REGION=ap-southeast-2; fi
+      - node packages/eulogise-generator/scripts/load-ssm-env.js --env ${ENVIRONMENT} --path "/eulogise/generator/${ENVIRONMENT}"
+      - node -e "const fs=require('fs');const p='packages/eulogise-generator/environments/.env.'+process.env.ENVIRONMENT;if(!fs.existsSync(p)){console.error('Missing '+p);process.exit(1);}const lines=fs.readFileSync(p,'utf8').split(/\\r?\\n/);const env={};for(const line of lines){if(!line||line.startsWith('#'))continue;const idx=line.indexOf('=');if(idx===-1)continue;const k=line.slice(0,idx);const v=line.slice(idx+1);env[k]=v;}const safeKeys=['API_URL','AWS_REGION','XAWS_REGION','XAWS_S3_BUCKET','XAWS_S3_URL','XAWS_S3_URL_WITHOUT_CDN','XAWS_CLOUDFRONT_MEDIA_DISTRIBUTION_ID','DESIGN_SYSTEM_URL','FFMPEG_PATH','GHOSTSCRIPT_PATH','FONTS_PATH','CHROME_EXECUTION_PATH','VIDEO_OUTPUT_SIZE','IS_LAMBDA_GENERATE_SLIDESHOW','ENABLE_HTML_GENERATION'];const secretKeys=['API_ACCESS_KEY','API_SECRET_KEY','SLACK_WEBHOOK_URL','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY'];console.log('Loaded SSM env file:',p);console.log('Loaded key count:',Object.keys(env).length);for(const k of safeKeys){if(k in env)console.log(k+':',env[k]);}for(const k of secretKeys){console.log(k+':',env[k]?'set':'missing');}"
+
+  post_build:
+    commands:
+      - echo Deploying ....
+      - yarn deploy:generator:${ENVIRONMENT}
+      # cleanup generated SSM env file to avoid persisting secrets in workspace artifacts
+      - rm -f packages/eulogise-generator/environments/.env.${ENVIRONMENT}

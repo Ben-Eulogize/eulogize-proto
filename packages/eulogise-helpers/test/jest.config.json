@@ -1,0 +1,25 @@
+{
+  "rootDir": "../",
+  "roots": ["<rootDir>/src"],
+  "testEnvironment": "jsdom",
+  "transform": {
+    "^.+\\.tsx?$": "ts-jest"
+  },
+  "testPathIgnorePatterns": ["node_modules", "\\.cache", "<rootDir>.*/public"],
+  "transformIgnorePatterns": ["node_modules/(?!(gatsby)/)"],
+  "coverageReporters": [
+    "lcov",
+    "text",
+    "html"
+  ],
+  "globals": {
+    "__PATH_PREFIX__": ""
+  },
+  "testEnvironmentOptions": { "url": "http://localhost" },
+  "testMatch": ["<rootDir>/src/**/*.spec.ts?(x)"],
+  "setupFilesAfterEnv": [
+    "@testing-library/jest-dom/extend-expect",
+    "<rootDir>/test/jestAfterEnv.setup.ts"
+  ],
+  "collectCoverage": true
+}

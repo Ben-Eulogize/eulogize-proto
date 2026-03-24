@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo Installing Yarn...
+      - npm install -g yarn
+
+  pre_build:
+    commands:
+      # printing environment variables
+      - echo "S3 bucket is $S3_BUCKET"
+      - echo "ENVIRONMENT is $ENVIRONMENT"
+      - echo "DISTRIBUTION_ID is $DISTRIBUTION_ID"
+      # install and build libraries
+      - echo 💡 Installing and building libraries
+      - yarn installAndBuild
+      - echo ✅ Packages installed
+      - echo 💡 Loading UI env from SSM
+      - node packages/eulogise-client/scripts/load-ssm-env.js --env ${ENVIRONMENT} --path "/eulogise/client/${ENVIRONMENT}"
+      - export BUGSNAG_API_KEY=${BUGSNAG_API_KEY:-$(node packages/eulogise-client/scripts/read-env-value.js --path packages/eulogise-client/environments/.env.${ENVIRONMENT} --key BUGSNAG_API_KEY)}
+      - echo ✅ UI env loaded
+      # build
+      - echo Build UI
+      - yarn build:ui:${ENVIRONMENT}
+      - echo ✅ UI Bundle built
+      # upload source map to bugsnag (production-us and staging only)
+      - if [ "${ENVIRONMENT}" = "production-us" ] || [ "${ENVIRONMENT}" = "staging" ]; then echo "Upload Source Map to BugSnag..."; BUGSNAG_API_KEY=${BUGSNAG_API_KEY} BASE_URL=${S3_BUCKET} yarn upload-ui-sourcemaps; echo "Source Map uploaded to BugSnag"; else echo "Skipping source map upload for ${ENVIRONMENT}"; fi
+  post_build:
+    commands:
+      - aws s3 rm s3://${S3_BUCKET} --recursive
+      - aws s3 cp packages/eulogise-client/public s3://${S3_BUCKET} --recursive
+      - aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID} --paths '/*'
+      # cleanup generated SSM env file to avoid persisting secrets in workspace artifacts
+      - rm -f packages/eulogise-client/environments/.env.${ENVIRONMENT}

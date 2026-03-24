@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "module": "commonjs",
+    "target": "es5",
+    "watch": false,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "declaration": false,
+
+    /* Type Checking */
+    "types": ["node","@types/mocha"],
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "downlevelIteration": true,
+    "lib": ["es6", "es7", "dom"],
+    "preserveSymlinks": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "../../node_modules",
+    "test/**/*"
+  ]
+}
