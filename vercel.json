@@ -4,5 +4,8 @@
   "buildCommand": "yarn install && yarn build && cd packages/eulogise-client && GATSBY_DISABLE_MAIN_PROCESS_LMDB=true NODE_OPTIONS=--max-old-space-size=8192 ENV=staging gatsby build",
   "outputDirectory": "packages/eulogise-client/public",
   "installCommand": "yarn install",
-  "ignoreCommand": "exit 0"
+  "ignoreCommand": "exit 0",
+  "env": {
+    "GATSBY_APP_ENDPOINT": "https://eulogise-client-v2-develop.vercel.app"
+  }
 }
