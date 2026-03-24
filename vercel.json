@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "yarn install && yarn build && cd packages/eulogise-client && yarn build:staging",
+  "buildCommand": "yarn install && yarn build && cd packages/eulogise-client && GATSBY_DISABLE_MAIN_PROCESS_LMDB=true NODE_OPTIONS=--max-old-space-size=8192 ENV=staging gatsby build",
   "outputDirectory": "packages/eulogise-client/public",
   "installCommand": "yarn install",
   "ignoreCommand": "exit 0"
