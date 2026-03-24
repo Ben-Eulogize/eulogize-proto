@@ -1,5 +1,17 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-yarn test
+# Prototype sandbox: block any push to a wild-palms remote
+remote_url="$2"
+if echo "$remote_url" | grep -qi "wild-palms"; then
+  echo "=========================================="
+  echo "BLOCKED: Push to wild-palms remote denied."
+  echo "This is a prototype sandbox repo."
+  echo "Remote URL: $remote_url"
+  echo "=========================================="
+  exit 1
+fi
 
+# Note: yarn test intentionally skipped in this prototype sandbox.
+# Packages must be built locally first (yarn build) for tests to pass.
+# Run tests manually: yarn test
