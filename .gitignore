@@ -153,4 +153,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.proto
+**/environments/.env.proto
 credentials.json
