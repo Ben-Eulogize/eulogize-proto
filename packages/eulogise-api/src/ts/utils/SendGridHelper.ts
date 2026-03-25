@@ -67,7 +67,9 @@ export class SendGridHelper {
     }
 
     const options = SendGridHelper.createOptions({
-      templateId: process.env.SENDGRID_TEMPLATE_ACCOUNT_SIGNUP!,
+      templateId:
+        process.env.SENDGRID_TEMPLATE_LIFECYCLE_UC06 ||
+        process.env.SENDGRID_TEMPLATE_ACCOUNT_SIGNUP!,
       inviteeName: userObj.fullName!,
       inviteeEmail: userObj.email!,
       data: substitutions,
@@ -470,94 +472,6 @@ export class SendGridHelper {
       data: substitutions,
     })
     console.log('account sendForgotEmail sgConfig', JSON.stringify(options))
-    return SendGridHelper.send(options)
-  }
-
-  public static async sendAccountDeletionConfirmation({
-    fullName,
-    email,
-    uploadedPhotoCount = 0,
-    uploadedAudioCount = 0,
-    removedTributeNames = [],
-  }: {
-    fullName: string
-    email: string
-    uploadedPhotoCount?: number
-    uploadedAudioCount?: number
-    removedTributeNames?: Array<string>
-  }) {
-    const supportName =
-      process.env.SENDGRID_EMAIL_SUPPORT_NAME || 'Eulogize Support'
-    const supportEmail =
-      process.env.SENDGRID_EMAIL_SUPPORT_ADDRESS ||
-      'support@eulogizememorials.com'
-    const safeFullName = fullName || 'there'
-    const hasDeletedPhotos = uploadedPhotoCount > 0
-    const hasDeletedAudios = uploadedAudioCount > 0
-    const hasDeletedTributes = removedTributeNames.length > 0
-    const tributeNames = removedTributeNames.join(', ')
-    const tributeWord = removedTributeNames.length > 1 ? 'tributes' : 'tribute'
-    const tributeVerb = removedTributeNames.length > 1 ? 'have' : 'has'
-    const photoVerb = uploadedPhotoCount > 1 ? 'have' : 'has'
-    const audioVerb = uploadedAudioCount > 1 ? 'have' : 'has'
-    const deletionNotes: Array<string> = []
-    const deletionNotesHtml: Array<string> = []
-
-    if (hasDeletedPhotos) {
-      deletionNotes.push(
-        `Your uploaded ${uploadedPhotoCount} photo${
-          uploadedPhotoCount > 1 ? 's' : ''
-        } ${photoVerb} been deleted from Eulogize.`,
-      )
-      deletionNotesHtml.push(
-        `<li>Your uploaded ${uploadedPhotoCount} photo${
-          uploadedPhotoCount > 1 ? 's' : ''
-        } ${photoVerb} been deleted from Eulogize.</li>`,
-      )
-    }
-    if (hasDeletedAudios) {
-      deletionNotes.push(
-        `Your uploaded ${uploadedAudioCount} audio file${
-          uploadedAudioCount > 1 ? 's' : ''
-        } ${audioVerb} been deleted from Eulogize.`,
-      )
-      deletionNotesHtml.push(
-        `<li>Your uploaded ${uploadedAudioCount} audio file${
-          uploadedAudioCount > 1 ? 's' : ''
-        } ${audioVerb} been deleted from Eulogize.</li>`,
-      )
-    }
-    if (hasDeletedTributes) {
-      deletionNotes.push(
-        `Your existing ${tributeWord} ${tributeNames} ${tributeVerb} been removed from Eulogize.`,
-      )
-      deletionNotesHtml.push(
-        `<li>Your existing ${tributeWord} ${tributeNames} ${tributeVerb} been removed from Eulogize.</li>`,
-      )
-    }
-    const deletionNotesTextBlock =
-      deletionNotes.length > 0
-        ? `\n\nDeletion summary:\n${deletionNotes
-            .map((note, index) => `${index + 1}. ${note}`)
-            .join('\n')}`
-        : ''
-    const deletionNotesHtmlBlock =
-      deletionNotesHtml.length > 0
-        ? `<p>Deletion summary:</p><ol>${deletionNotesHtml.join('')}</ol>`
-        : ''
-    const options: MailDataRequired = {
-      from: {
-        name: supportName,
-        email: supportEmail,
-      },
-      to: {
-        name: safeFullName,
-        email,
-      },
-      subject: 'Your Eulogize account has been deleted',
-      text: `Hi ${safeFullName}, your Eulogize account has been deleted. You will no longer receive emails from us. If you change your mind in the future, you can create a new account with the same email.${deletionNotesTextBlock}`,
-      html: `<p>Hi ${safeFullName},</p><p>Your Eulogize account has been deleted.</p><p>You will no longer receive emails from us.</p><p>If you change your mind in the future, you can create a new account with the same email.</p>${deletionNotesHtmlBlock}`,
-    }
     return SendGridHelper.send(options)
   }
 

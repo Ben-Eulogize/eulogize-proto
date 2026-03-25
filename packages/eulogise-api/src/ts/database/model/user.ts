@@ -26,6 +26,8 @@ const UPDATABLE_FIELDS = [
   'acceptTerms',
   'userGuideHelperConfig',
   'stripe',
+  'lastLoginAt',
+  'lifecycleEmailState',
 ]
 
 class UserModel extends BaseModel<IUserModel.Model, IUserModel.Schema> {
@@ -112,9 +114,19 @@ class UserModel extends BaseModel<IUserModel.Model, IUserModel.Schema> {
         stripe: {
           type: Object,
         },
+        lastLoginAt: {
+          type: Number,
+        },
+        lifecycleEmailState: {
+          type: Object,
+        },
       },
       {
-        saveUnknown: ['userGuideHelperConfig.**', 'stripe.**'],
+        saveUnknown: [
+          'userGuideHelperConfig.**',
+          'stripe.**',
+          'lifecycleEmailState.**',
+        ],
         timestamps: true,
       },
     )
@@ -174,13 +186,6 @@ class UserModel extends BaseModel<IUserModel.Model, IUserModel.Schema> {
       user.password = undefined
     }
     return user
-  }
-
-  public async findByPartialEmail(
-    partialEmail: string,
-  ): Promise<Array<IUserModel.Schema>> {
-    const query = partialEmail.toLowerCase().trim()
-    return this.getModel().scan().filter('email').contains(query).all().exec()
   }
 
   public async findOneByEmail(
@@ -337,9 +342,26 @@ class UserModel extends BaseModel<IUserModel.Model, IUserModel.Schema> {
         acceptTerms: userObj.acceptTerms,
         acceptMarketing: userObj.acceptMarketing,
         userGuideHelperConfig: userObj.userGuideHelperConfig,
+        lastLoginAt: userObj.lastLoginAt,
       } as IUserModel.PublicSchema
     }
     return
+  }
+
+  public async updateLastLoginAt(userId: string): Promise<void> {
+    await this.getModel().update({ id: userId }, { lastLoginAt: Date.now() })
+  }
+
+  public async updateLifecycleEmailState(
+    userId: string,
+    patch: Partial<IUserModel.LifecycleEmailState>,
+  ): Promise<void> {
+    const user = await this.findById(userId)
+    const merged = { ...(user?.lifecycleEmailState || {}), ...patch }
+    await this.getModel().update(
+      { id: userId },
+      { lifecycleEmailState: merged },
+    )
   }
 }
 

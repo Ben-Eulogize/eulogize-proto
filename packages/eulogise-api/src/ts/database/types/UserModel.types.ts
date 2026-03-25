@@ -22,6 +22,8 @@ export namespace IUserModel {
     acceptMarketing?: boolean
     userGuideHelperConfig?: IUserModel.UserGuideHelperConfig
     stripe?: StripeMetadata
+    lastLoginAt?: number
+    lifecycleEmailState?: IUserModel.LifecycleEmailState
   }
   export interface Schema {
     id?: string
@@ -46,6 +48,8 @@ export namespace IUserModel {
     acceptMarketing?: boolean
     userGuideHelperConfig?: IUserModel.UserGuideHelperConfig
     stripe?: StripeMetadata
+    lastLoginAt?: number
+    lifecycleEmailState?: IUserModel.LifecycleEmailState
   }
   export interface PublicSchema {
     id: string
@@ -67,6 +71,7 @@ export namespace IUserModel {
     acceptMarketing?: boolean
     userGuideHelperConfig?: IUserModel.UserGuideHelperConfig
     stripe?: StripeMetadata
+    lastLoginAt?: number
   }
 
   export interface UserGuideHelperConfig {
@@ -83,6 +88,18 @@ export namespace IUserModel {
         id: string
       }
     }
+  }
+
+  export interface LifecycleEmailState {
+    uc06SentAt?: number
+    uc07SentAt?: number
+    uc08SentAt?: number
+    uc08bSentAt?: number
+    uc09SentAt?: number
+    downloadReadySentFor?: string[]
+    postDownloadUpsellSentFor?: string[]
+    postPurchaseUpsellSentFor?: string[]
+    unsubscribedFromEngagement?: boolean
   }
 
   export type Model = Item & Schema

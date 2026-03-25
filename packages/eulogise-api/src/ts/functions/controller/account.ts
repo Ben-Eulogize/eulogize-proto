@@ -1,19 +1,9 @@
 import { Lambdur } from 'lambdur'
 import * as uuid from 'uuid'
 import {
-  caseModel,
-  assetModel,
-  bookletModel,
-  bookmarkModel,
   clientModel,
   inviteModel,
-  sidedCardModel,
-  slideshowModel,
-  slideshowTitleSlideModel,
-  photobookModel,
   serviceModel,
-  thankyouCardModel,
-  tvWelcomeScreenModel,
   userModel,
 } from '../../database'
 import { Webtoken } from '../../webtoken'
@@ -21,15 +11,10 @@ import { CaseResourceController, ClientResourceController } from './resource'
 
 import * as Errors from '../error'
 import { SendGridHelper } from '../../utils/SendGridHelper'
-import { DbCleanUpHelper } from '../../utils/DbCleanUpHelper'
 import { IUserModel } from '../../database/types/UserModel.types'
 import { IInviteModel } from '../../database/types/InviteModel.types'
 import { IServiceModel } from '../../database/types/ServiceModel.types'
-import {
-  EulogiseProductName,
-  EulogiseUserRole,
-  NO_REPLY_EULOGISE_EMAIL,
-} from '@eulogise/core'
+import { EulogiseUserRole, NO_REPLY_EULOGISE_EMAIL } from '@eulogise/core'
 import { ApiLambdaHelper, ApiLambdaJobTypes } from '../../utils/ApiLambdaHelper'
 
 const reindexRedisDb = async () => {
@@ -41,54 +26,6 @@ const reindexRedisDb = async () => {
     true,
   )
 }
-
-const DELETE_ACCOUNT_FAILED_MESSAGE =
-  "Something went wrong and we couldn't delete your account yet. Your account is still active. Please try again in a few minutes or contact support@eulogizememorials.com."
-const DELETE_ACCOUNT_NOT_ALLOWED_MESSAGE =
-  'Account deletion is only available for direct user accounts.'
-
-type TributeProductModel = {
-  getProductsByCaseId: (caseId: string) => Promise<Array<object>>
-  removeByCaseId: (caseId: string) => Promise<void>
-}
-
-const DIRECT_CUSTOMER_TRIBUTE_MODELS: Array<{
-  name: EulogiseProductName
-  model: TributeProductModel
-}> = [
-  {
-    name: EulogiseProductName.BOOKLET,
-    model: bookletModel,
-  },
-  {
-    name: EulogiseProductName.BOOKMARK,
-    model: bookmarkModel,
-  },
-  {
-    name: EulogiseProductName.PHOTOBOOK,
-    model: photobookModel,
-  },
-  {
-    name: EulogiseProductName.SIDED_CARD,
-    model: sidedCardModel,
-  },
-  {
-    name: EulogiseProductName.SLIDESHOW,
-    model: slideshowModel,
-  },
-  {
-    name: EulogiseProductName.SLIDESHOW_TITLE_SLIDE,
-    model: slideshowTitleSlideModel,
-  },
-  {
-    name: EulogiseProductName.THANK_YOU_CARD,
-    model: thankyouCardModel,
-  },
-  {
-    name: EulogiseProductName.TV_WELCOME_SCREEN,
-    model: tvWelcomeScreenModel,
-  },
-]
 
 export class AccountController {
   public static async signCheckUser(
@@ -147,6 +84,8 @@ export class AccountController {
       type: 'user',
     }
 
+    await userModel.updateLastLoginAt(userObj.id!)
+
     if (userObj.id) {
       const clients = await clientModel.findByUserId(userObj.id)
       console.log('found client', clients)
@@ -175,6 +114,9 @@ export class AccountController {
       inviteObj.role === EulogiseUserRole.EDITOR
     ) {
       const user = await userModel.findOne({ email: inviteObj.email })
+      if (user?.id) {
+        await userModel.updateLastLoginAt(user.id)
+      }
       return Webtoken.encode({
         ref: user?.id!,
         role: inviteObj.role,
@@ -216,6 +158,8 @@ export class AccountController {
     if (!userObj) {
       throw new Lambdur.Error(Errors.account.sign.in.shadow.invalidToken())
     }
+
+    await userModel.updateLastLoginAt(userObj.id!)
 
     return Webtoken.encode({
       ref: userObj.id!,
@@ -270,6 +214,7 @@ export class AccountController {
 
     userObj = await userModel.save(saveQuery)
     await reindexRedisDb()
+    await userModel.updateLastLoginAt(userObj.id!)
 
     if (invite) {
       const inviteObj = await inviteModel.findById(invite)
@@ -289,6 +234,9 @@ export class AccountController {
     // Only send the welcome email to the public user
     if (role === EulogiseUserRole.CUSTOMER) {
       await AccountController.sendSignUpEmail(userObj, deceasedName)
+      await userModel.updateLifecycleEmailState(userObj.id!, {
+        uc06SentAt: Date.now(),
+      })
     }
 
     return Webtoken.encode({
@@ -449,106 +397,6 @@ export class AccountController {
     await userModel.update(saveQuery)
   }
 
-  public static async deleteDirectCustomerAccount(
-    accountId: string,
-  ): Promise<void> {
-    const userObj = await userModel.findById(accountId)
-    if (!userObj) {
-      throw new Lambdur.Error({
-        id: '',
-        statusCode: 404,
-        message: 'Account not found.',
-      })
-    }
-
-    if (userObj.role !== EulogiseUserRole.CUSTOMER) {
-      throw new Lambdur.Error({
-        id: '',
-        statusCode: 403,
-        message: DELETE_ACCOUNT_NOT_ALLOWED_MESSAGE,
-      })
-    }
-
-    const customerCase = await caseModel.findOneByCustomerId(accountId)
-    if (customerCase?.client) {
-      throw new Lambdur.Error({
-        id: '',
-        statusCode: 403,
-        message: DELETE_ACCOUNT_NOT_ALLOWED_MESSAGE,
-      })
-    }
-
-    let uploadedPhotoCount = 0
-    let uploadedAudioCount = 0
-    let removedTributeNames: Array<string> = []
-
-    try {
-      if (customerCase?.id) {
-        const caseId = customerCase.id
-        uploadedPhotoCount = await assetModel.getImageCountByCaseId(caseId)
-        uploadedAudioCount = await assetModel.getAudioCountByCaseId(caseId)
-        const tributeCountByType = await Promise.all(
-          DIRECT_CUSTOMER_TRIBUTE_MODELS.map(async ({ model, name }) => {
-            const products = await model.getProductsByCaseId(caseId)
-            return {
-              name,
-              count: products.length,
-            }
-          }),
-        )
-        removedTributeNames = tributeCountByType
-          .filter(({ count }) => count > 0)
-          .map(({ name }) => name)
-
-        if (uploadedPhotoCount > 0 || uploadedAudioCount > 0) {
-          await assetModel.removeByCaseId({ caseId })
-        }
-
-        await Promise.all(
-          DIRECT_CUSTOMER_TRIBUTE_MODELS.map(async ({ model, name }) => {
-            if (removedTributeNames.includes(name)) {
-              await model.removeByCaseId(caseId)
-            }
-          }),
-        )
-
-        await DbCleanUpHelper.deleteCaseById(caseId)
-      }
-
-      const userStillExists = await userModel.findById(accountId)
-      if (userStillExists) {
-        await userModel.remove({ id: accountId })
-      }
-      await reindexRedisDb()
-    } catch (error) {
-      console.error('deleteDirectCustomerAccount failed', {
-        accountId,
-        error,
-      })
-      throw new Lambdur.Error({
-        id: '',
-        statusCode: 500,
-        message: DELETE_ACCOUNT_FAILED_MESSAGE,
-      })
-    }
-
-    try {
-      await SendGridHelper.sendAccountDeletionConfirmation({
-        fullName: userObj.fullName,
-        email: userObj.email,
-        uploadedPhotoCount,
-        uploadedAudioCount,
-        removedTributeNames,
-      })
-    } catch (error) {
-      console.error('deleteDirectCustomerAccount confirmation email failed', {
-        accountId,
-        email: userObj.email,
-        error,
-      })
-    }
-  }
-
   public static async signUpFuneralDirectorAsAdmin(
     fullName: string,
     email: string,
@@ -628,6 +476,7 @@ export class AccountController {
     }
 
     await userModel.save(saveQuery)
+    await userModel.updateLastLoginAt(userObj.id!)
 
     return Webtoken.encode({
       ref: userObj.id!,

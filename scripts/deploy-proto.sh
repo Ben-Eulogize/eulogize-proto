@@ -42,18 +42,22 @@ AWS_REGION="${REGION}" AWS_PROFILE="${AWS_PROFILE}" \
   --env "${ENVIRONMENT}" \
   --path "/eulogise/client/${ENVIRONMENT}"
 
-# Step 2 — build
+# Step 2 — build shared packages first (core, client-core, helpers, client-components)
+echo "🔨 Building shared packages..."
+yarn build
+
+# Step 3 — build Gatsby app
 echo "🔨 Building Gatsby app (ENV=${ENVIRONMENT})..."
 yarn build:ui:proto
 
-# Step 3 — sync to S3
+# Step 4 — sync to S3
 echo "☁️  Syncing to s3://${S3_BUCKET}..."
 aws s3 sync "${CLIENT_DIR}/public" "s3://${S3_BUCKET}" \
   --delete \
   --profile "${AWS_PROFILE}" \
   --region "${REGION}"
 
-# Step 4 — invalidate CloudFront
+# Step 5 — invalidate CloudFront
 echo "🔄 Invalidating CloudFront cache..."
 aws cloudfront create-invalidation \
   --distribution-id "${DISTRIBUTION_ID}" \
@@ -62,7 +66,7 @@ aws cloudfront create-invalidation \
   --query 'Invalidation.{Id:Id,Status:Status}' \
   --output table
 
-# Step 5 — cleanup env file
+# Step 6 — cleanup env file
 echo "🧹 Cleaning up env file..."
 rm -f "${ENV_FILE}"
 
