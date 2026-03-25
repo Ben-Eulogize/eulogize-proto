@@ -9,6 +9,7 @@
     "build": "lerna run build --scope @eulogise/core && lerna run build --scope @eulogise/client-core --scope @eulogise/mock && lerna run build --scope @eulogise/helpers && lerna run build --scope @eulogise/client-components",
     "build:ui:test-eng-1": "lerna run build:test-eng-1 --scope @eulogise/client",
     "build:ui:test-eng-2": "lerna run build:test-eng-2 --scope @eulogise/client",
+    "build:ui:proto": "lerna run build:proto --scope @eulogise/client",
     "build:ui:staging": "lerna run build:staging --scope @eulogise/client",
     "build:ui:production-us": "lerna run build:prod-us --scope @eulogise/client",
     "deploy:api:test-eng-1": "lerna run deploy:test-eng-1 --scope @eulogise/api",
