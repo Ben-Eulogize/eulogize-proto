@@ -5,7 +5,9 @@
   "outputDirectory": "packages/eulogise-client/public",
   "installCommand": "yarn install",
   "ignoreCommand": "exit 0",
-  "env": {
-    "GATSBY_APP_ENDPOINT": "https://eulogise-client-v2-develop.vercel.app"
+  "build": {
+    "env": {
+      "GATSBY_APP_ENDPOINT": "https://eulogise-client-v2-develop.vercel.app"
+    }
   }
 }
